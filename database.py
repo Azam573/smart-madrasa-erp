@@ -6,30 +6,30 @@ import urllib.parse
 @st.cache_resource
 def get_connection():
     try:
-        # ১. পাসওয়ার্ড এনকোড করা (পাসওয়ার্ডে @ থাকায় এটি জরুরি)
+        # পাসওয়ার্ড নিরাপদ করা
         password = "qZEwjuvZYeSZyZ72@"
         encoded_password = urllib.parse.quote_plus(password)
         
-        # ২. সুপাবেসের স্ট্যাবল হোস্ট এড্রেস (Transaction Pooler)
-        # আপনার প্রজেক্টের জন্য এটি সবচেয়ে বেশি কাজ করবে
+        # ট্রানজেকশন পুলাার ব্যবহার করা হচ্ছে (এটিই আপনার সার্ভারলেস অ্যাপের জন্য সেরা)
+        # পোর্টটি আপনার ড্যাশবোর্ড থেকে দেখে ৬৫৪৩ হলে তা নিশ্চিত করুন
         host = "db.hgifhvgjdulhhjdgrxhe.supabase.co"
+        port = "6543" 
+        dbname = "postgres"
         
-        # ৩. কানেকশন স্ট্রিং তৈরি
-        # সরাসরি কানেকশন এর বদলে আমরা সেশন মোড ব্যবহার করার চেষ্টা করছি
-        conn_str = f"postgresql://postgres:{encoded_password}@{host}:5432/postgres?sslmode=require"
+        conn_str = f"postgresql://postgres:{encoded_password}@{host}:{port}/{dbname}?sslmode=require"
         
+        # কানেকশন তৈরি
         conn = psycopg2.connect(conn_str)
         return conn
     except Exception as e:
-        # এরর মেসেজটি অ্যাপের স্ক্রিনে দেখাবে
         st.error(f"❌ ডাটাবেস কানেকশন এরর: {e}")
         return None
 
+# কানেকশন হেলথ চেক
 def check_conn_health(conn):
-    if conn is None: return False
     try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT 1')
-        return True
+        if conn and not conn.closed:
+            return True
     except:
         return False
+    return False
