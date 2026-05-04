@@ -1,4 +1,3 @@
-
 import psycopg2
 import streamlit as st
 import urllib.parse
@@ -6,26 +5,27 @@ import urllib.parse
 @st.cache_resource
 def get_connection():
     try:
-        # পাসওয়ার্ড নিরাপদ করা
+        # ১. পাসওয়ার্ড এনকোড করা (যেহেতু আপনার পাসওয়ার্ডে '@' আছে)
         password = "qZEwjuvZYeSZyZ72@"
         encoded_password = urllib.parse.quote_plus(password)
         
-        # ট্রানজেকশন পুলাার ব্যবহার করা হচ্ছে (এটিই আপনার সার্ভারলেস অ্যাপের জন্য সেরা)
-        # পোর্টটি আপনার ড্যাশবোর্ড থেকে দেখে ৬৫৪৩ হলে তা নিশ্চিত করুন
-        host = "db.hgifhvgjdulhhjdgrxhe.supabase.co"
+        # ২. আপনার দেওয়া নতুন Pooler Connection Details
+        host = "aws-1-ap-south-1.pooler.supabase.com"
         port = "6543" 
         dbname = "postgres"
+        user = "postgres.hgifhvgjdulhhjdgrxhe"
         
-        conn_str = f"postgresql://postgres:{encoded_password}@{host}:{port}/{dbname}?sslmode=require"
+        # ৩. চূড়ান্ত কানেকশন স্ট্রিং
+        conn_str = f"postgresql://{user}:{encoded_password}@{host}:{port}/{dbname}?sslmode=require"
         
-        # কানেকশন তৈরি
+        # ৪. ডাটাবেসের সাথে কানেক্ট করা
         conn = psycopg2.connect(conn_str)
         return conn
     except Exception as e:
         st.error(f"❌ ডাটাবেস কানেকশন এরর: {e}")
         return None
 
-# কানেকশন হেলথ চেক
+# কানেকশন হেলথ চেক (এটি নিশ্চিত করবে ডাটাবেস লাইভ আছে কি না)
 def check_conn_health(conn):
     try:
         if conn and not conn.closed:
