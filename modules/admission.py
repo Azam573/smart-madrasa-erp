@@ -40,9 +40,9 @@ def show_admission():
         cur.execute("SELECT class_name FROM classes WHERE tenant_id = %s AND status = 'Active'", (tenant_id,))
         dynamic_classes = [row[0] for row in cur.fetchall()]
         if not dynamic_classes:
-            dynamic_classes = ["প্লে (Play)", "নার্সারি (Nursery)", "১ম শ্রেণি"] # ডিফল্ট
+            dynamic_classes = ["প্লে (Play)", "নার্সারি (Nursery)", "১ম শ্রেণি", "২য় শ্রেণি", "৩য় শ্রেণি", "৪র্থ শ্রেণি","৫ম শ্রেণি", "৬ষ্ঠ শ্রেণি", "৭ম শ্রেণি","৮ম শ্রেণি", "৯ম শ্রেণি","১০ম শ্রেণি"] # ডিফল্ট
     except Exception:
-        dynamic_classes = ["প্লে (Play)", "নার্সারি (Nursery)", "১ম শ্রেণি"]
+        dynamic_classes = ["প্লে (Play)", "নার্সারি (Nursery)", "১ম শ্রেণি" "২য় শ্রেণি", "৩য় শ্রেণি", "৪র্থ শ্রেণি","৫ম শ্রেণি", "৬ষ্ঠ শ্রেণি", "৭ম শ্রেণি","৮ম শ্রেণি", "৯ম শ্রেণি","১০ম শ্রেণি"]
 
     try:
         # ডাটাবেস থেকে শুধুমাত্র এই মাদরাসার (tenant_id) ছাত্রদের ডাটা সংগ্রহ
