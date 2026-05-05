@@ -135,32 +135,33 @@ def show_finance():
                     if st.button("🖨️ প্রিন্ট রিসিট (Print Receipt)", use_container_width=True):
                         rec_details = receipt_to_print.split(" | ")
                         
-                        # প্রিন্ট ডিজাইন
-                        st.markdown(f"""
-                        <div style='border: 2px dashed #4CAF50; padding: 25px; border-radius: 12px; text-align: center; background-color: #fdfdfd; color: black; max-width: 400px; margin: auto;'>
-                            <h2 style='color: #4CAF50; margin-bottom: 5px; font-size: 24px;'>{institute_name}</h2>
-                            <p style='color: gray; margin-top: 0; font-size: 14px;'>মানি রিসিট (Money Receipt)</p>
-                            <hr style='border-top: 1px dashed #ccc;'>
-                            
-                            <p align='left' style='font-size: 16px;'>
-                                <b>ছাত্রের নাম:</b> {r_name} <br>
-                                <b>শ্রেণী:</b> {r_cls} | <b>রোল:</b> {r_roll}
-                            </p>
-                            
-                            <div style='background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 15px 0;'>
-                                <h3 align='center' style='color: #2E7D32; margin: 0;'>জমা: {rec_details[2]}</h3>
-                            </div>
-                            
-                            <p align='left' style='font-size: 15px;'>
-                                <b>মাসের নাম:</b> {rec_details[1]} <br>
-                                <b>{rec_details[0]}</b> <br>
-                                <b>তারিখ:</b> {datetime.now().strftime('%d/%m/%Y')}
-                            </p>
-                            <br><br>
-                            <p align='right' style='margin-bottom: 0;'>___________________<br><span style='font-size: 13px; color: gray;'>কর্তৃপক্ষের স্বাক্ষর</span></p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        st.info("🖨️ প্রিন্ট করতে **Ctrl + P** চাপুন।")
+                        # প্রিন্ট ডিজাইন (HTML কোড বামে চাপানো হয়েছে)
+                        receipt_html = f"""
+<div style='border: 2px dashed #4CAF50; padding: 25px; border-radius: 12px; text-align: center; background-color: #fdfdfd; color: black; max-width: 400px; margin: auto;'>
+    <h2 style='color: #4CAF50; margin-bottom: 5px; font-size: 24px;'>{institute_name}</h2>
+    <p style='color: gray; margin-top: 0; font-size: 14px;'>মানি রিসিট (Money Receipt)</p>
+    <hr style='border-top: 1px dashed #ccc;'>
+    
+    <p align='left' style='font-size: 16px;'>
+        <b>ছাত্রের নাম:</b> {r_name} <br>
+        <b>শ্রেণী:</b> {r_cls} | <b>রোল:</b> {r_roll}
+    </p>
+    
+    <div style='background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 15px 0;'>
+        <h3 align='center' style='color: #2E7D32; margin: 0;'>জমা: {rec_details[2]}</h3>
+    </div>
+    
+    <p align='left' style='font-size: 15px;'>
+        <b>মাসের নাম:</b> {rec_details[1]} <br>
+        <b>{rec_details[0]}</b> <br>
+        <b>তারিখ:</b> {datetime.now().strftime('%d/%m/%Y')}
+    </p>
+    <br><br>
+    <p align='right' style='margin-bottom: 0;'>___________________<br><span style='font-size: 13px; color: gray;'>কর্তৃপক্ষের স্বাক্ষর</span></p>
+</div>
+"""
+                        st.markdown(receipt_html, unsafe_allow_html=True)
+                        st.info("🖨️ প্রিন্ট করতে কীবোর্ড থেকে **Ctrl + P** চাপুন।")
                 else:
                     st.warning("⚠️ এই ছাত্রের কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি।")
             except Exception as e:
@@ -175,7 +176,6 @@ def show_finance():
         rep_month = st.selectbox("কোন মাসের রিপোর্ট দেখতে চান?", ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"], key="due_rep_mo")
         
         try:
-            # SaaS Security Fix: Added f.tenant_id = %s in the ON clause
             cur.execute("""
                 SELECT s.name, s.class_name, s.roll_no, COALESCE(s.monthly_fee, 0), 
                        COALESCE(SUM(f.amount_paid), 0) as paid, s.mobile_no
