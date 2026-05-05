@@ -8,6 +8,7 @@ def show_expenses():
     st.markdown("---")
     
     tenant_id = st.session_state.get('tenant_id', 1)
+    institute_name = st.session_state.get('madrasa_name', 'স্মার্ট মাদরাসা')
     
     tab_exp, tab_inc, tab_report = st.tabs(["💸 নতুন খরচ (Expense)", "🕌 ফান্ড ও অনুদান (Funds)", "📊 ফান্ডভিত্তিক ব্যালেন্স"])
     
@@ -56,13 +57,55 @@ def show_expenses():
                         st.error(f"ডাটাবেস এরর: {e}")
                     
         with col2:
-            st.subheader("সাম্প্রতিক খরচের তালিকা")
+            st.subheader("সাম্প্রতিক খরচের তালিকা ও ভাউচার")
             try:
-                cur.execute("SELECT expense_date, fund_source, category, amount, description FROM expenses WHERE tenant_id=%s ORDER BY id DESC LIMIT 10", (tenant_id,))
+                # ID সহ ডাটা আনা হলো রিসিটের জন্য
+                cur.execute("SELECT id, expense_date, fund_source, category, amount, description FROM expenses WHERE tenant_id=%s ORDER BY id DESC LIMIT 10", (tenant_id,))
                 exp_data = cur.fetchall()
+                
                 if exp_data:
-                    df_exp = pd.DataFrame(exp_data, columns=["তারিখ", "ফান্ড", "খাত", "পরিমাণ (৳)", "বিবরণ"])
-                    st.dataframe(df_exp, use_container_width=True, hide_index=True)
+                    # টেবিল দেখানোর জন্য ID কলাম বাদ দিয়ে DataFrame তৈরি
+                    df_exp = pd.DataFrame(exp_data, columns=["id", "তারিখ", "ফান্ড", "খাত", "পরিমাণ (৳)", "বিবরণ"])
+                    st.dataframe(df_exp.drop(columns=["id"]), use_container_width=True, hide_index=True)
+                    
+                    st.markdown("---")
+                    st.markdown("### 🖨️ খরচের ভাউচার প্রিন্ট")
+                    
+                    # প্রিন্ট করার অপশন
+                    exp_to_print = st.selectbox("কোন খরচের ভাউচার প্রিন্ট করবেন?", [f"ভাউচার নং: {e[0]} | তারিখ: {e[1]} | খাত: {e[3]} | ৳ {e[4]}" for e in exp_data])
+                    
+                    if st.button("🖨️ প্রিন্ট ভাউচার (Expense Voucher)", use_container_width=True):
+                        exp_details = exp_to_print.split(" | ")
+                        
+                        # নির্দিষ্ট ভাউচারের ফান্ড ও বিবরণ বের করা
+                        fund_text = ""
+                        desc_text = ""
+                        for d in exp_data:
+                            if str(d[0]) == exp_details[0].split(": ")[1]:
+                                fund_text = d[2]
+                                desc_text = d[5]
+                                break
+                        
+                        # Markdown Error বাইপাস করার জন্য এক লাইনের HTML ডিজাইন
+                        expense_html = (
+                            f"<div style='border: 2px dashed #E64A19; padding: 25px; border-radius: 12px; text-align: center; background-color: #fdfdfd; color: black; max-width: 400px; margin: auto;'>"
+                            f"<h2 style='color: #E64A19; margin-bottom: 5px; font-size: 24px;'>{institute_name}</h2>"
+                            f"<p style='color: gray; margin-top: 0; font-size: 14px;'>পেমেন্ট ভাউচার (Payment Voucher)</p>"
+                            f"<hr style='border-top: 1px dashed #ccc;'>"
+                            f"<p align='left' style='font-size: 15px;'><b>{exp_details[0]}</b> <br><b>তারিখ:</b> {exp_details[1].replace('তারিখ: ', '')}</p>"
+                            f"<p align='left' style='font-size: 16px; margin-top: 10px;'><b>খরচের খাত:</b> {exp_details[2].replace('খাত: ', '')}</p>"
+                            f"<p align='left' style='font-size: 14px; color: #555;'><b>কোন ফান্ড থেকে:</b> {fund_text}<br><b>বিবরণ:</b> {desc_text}</p>"
+                            f"<div style='background: #FBE9E7; padding: 10px; border-radius: 8px; margin: 15px 0;'>"
+                            f"<h3 align='center' style='color: #D84315; margin: 0;'>পরিশোধিত: {exp_details[3]}</h3>"
+                            f"</div>"
+                            f"<br><br><div style='display: flex; justify-content: space-between;'>"
+                            f"<p align='left' style='margin-bottom: 0;'>___________________<br><span style='font-size: 13px; color: gray;'>গ্রহীতার স্বাক্ষর</span></p>"
+                            f"<p align='right' style='margin-bottom: 0;'>___________________<br><span style='font-size: 13px; color: gray;'>কর্তৃপক্ষের স্বাক্ষর</span></p>"
+                            f"</div>"
+                            f"</div>"
+                        )
+                        st.markdown(expense_html, unsafe_allow_html=True)
+                        st.info("🖨️ প্রিন্ট করতে কীবোর্ড থেকে **Ctrl + P** চাপুন।")
                 else:
                     st.info("কোনো খরচের রেকর্ড পাওয়া যায়নি।")
             except Exception as e:
@@ -96,13 +139,50 @@ def show_expenses():
                         st.error(f"ডাটাবেস এরর: {e}")
 
         with col_i2:
-            st.subheader("সাম্প্রতিক ফান্ডের তালিকা")
+            st.subheader("সাম্প্রতিক ফান্ড তালিকা ও রিসিট")
             try:
-                cur.execute("SELECT income_date, source, amount, description FROM other_incomes WHERE tenant_id=%s ORDER BY id DESC LIMIT 10", (tenant_id,))
+                # ID সহ ডাটা আনা হলো রিসিটের জন্য
+                cur.execute("SELECT id, income_date, source, amount, description FROM other_incomes WHERE tenant_id=%s ORDER BY id DESC LIMIT 10", (tenant_id,))
                 inc_data = cur.fetchall()
+                
                 if inc_data:
-                    df_inc = pd.DataFrame(inc_data, columns=["তারিখ", "ফান্ড", "পরিমাণ (৳)", "বিবরণ"])
-                    st.dataframe(df_inc, use_container_width=True, hide_index=True)
+                    # টেবিল দেখানোর জন্য ID কলাম বাদ দিয়ে DataFrame তৈরি
+                    df_inc = pd.DataFrame(inc_data, columns=["id", "তারিখ", "ফান্ড", "পরিমাণ (৳)", "বিবরণ"])
+                    st.dataframe(df_inc.drop(columns=["id"]), use_container_width=True, hide_index=True)
+                    
+                    st.markdown("---")
+                    st.markdown("### 🖨️ আয়/চাঁদার রিসিট প্রিন্ট")
+                    
+                    # প্রিন্ট করার অপশন
+                    inc_to_print = st.selectbox("কোন আয়ের রিসিট প্রিন্ট করবেন?", [f"রিসিট নং: {i[0]} | তারিখ: {i[1]} | দাতা/খাত: {i[2]} | ৳ {i[3]}" for i in inc_data])
+                    
+                    if st.button("🖨️ প্রিন্ট রিসিট (Income Receipt)", use_container_width=True):
+                        inc_details = inc_to_print.split(" | ")
+                        
+                        # নির্দিষ্ট রিসিটের বিবরণ বের করা
+                        desc_text = ""
+                        for d in inc_data:
+                            if str(d[0]) == inc_details[0].split(": ")[1]:
+                                desc_text = d[4]
+                                break
+
+                        # Markdown Error বাইপাস করার জন্য এক লাইনের HTML ডিজাইন
+                        income_html = (
+                            f"<div style='border: 2px dashed #4CAF50; padding: 25px; border-radius: 12px; text-align: center; background-color: #fdfdfd; color: black; max-width: 400px; margin: auto;'>"
+                            f"<h2 style='color: #4CAF50; margin-bottom: 5px; font-size: 24px;'>{institute_name}</h2>"
+                            f"<p style='color: gray; margin-top: 0; font-size: 14px;'>মানি রিসিট - প্রাপ্তি স্বীকার (Income Receipt)</p>"
+                            f"<hr style='border-top: 1px dashed #ccc;'>"
+                            f"<p align='left' style='font-size: 15px;'><b>{inc_details[0]}</b> <br><b>তারিখ:</b> {inc_details[1].replace('তারিখ: ', '')}</p>"
+                            f"<p align='left' style='font-size: 16px; margin-top: 10px;'><b>দাতা/খাত:</b> {inc_details[2].replace('দাতা/খাত: ', '')}</p>"
+                            f"<p align='left' style='font-size: 14px; color: #555;'><b>বিবরণ:</b> {desc_text}</p>"
+                            f"<div style='background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 15px 0;'>"
+                            f"<h3 align='center' style='color: #2E7D32; margin: 0;'>জমা: {inc_details[3]}</h3>"
+                            f"</div>"
+                            f"<br><br><p align='right' style='margin-bottom: 0;'>___________________<br><span style='font-size: 13px; color: gray;'>কর্তৃপক্ষের স্বাক্ষর</span></p>"
+                            f"</div>"
+                        )
+                        st.markdown(income_html, unsafe_allow_html=True)
+                        st.info("🖨️ প্রিন্ট করতে কীবোর্ড থেকে **Ctrl + P** চাপুন।")
                 else:
                     st.info("কোনো আয়ের রেকর্ড পাওয়া যায়নি।")
             except Exception as e:
